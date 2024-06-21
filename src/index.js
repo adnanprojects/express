@@ -12,12 +12,24 @@ const mockUsers = [
     { id: 3, name: 'kashan' },
 ];
 
+const findIndexByUserId = (request, response, next) => {
+    const { params: { id } } = request;
+    const parseId = parseInt(id);
+    if (isNaN(parseId)) return response.sendStatus(400);
+    const userIndex = mockUsers.findIndex(user => user.id === parseId);
+    if (userIndex === -1) return response.sendStatus(404);
+    request.userIndex = userIndex;
+    next();
+};
+
 app.get('/', (request, response) => response.status(201).send({ message: 'hello' }));
 
 app.get('/api/users', (request, response) => {
     const { filter, value } = request.query;
-    if (filter && value) response.send(mockUsers.filter(user => user[filter].includes(value)));
-    response.send(mockUsers);
+    if (filter && value) {
+        return response.send(mockUsers.filter(user => user[filter].includes(value)));
+    };
+    return response.send(mockUsers);
     // TODO: Handle the case in for which filter is wrong and check for value, like: filter=specialname&value=adnan & filter=name&value=23
 });
 
@@ -34,6 +46,24 @@ app.get('/api/users/:id', (request, response) => {
     const findUser = mockUsers.find(user => user.id === parseId);
     if (!findUser) return response.sendStatus(404);
     return response.send(findUser);
+});
+
+app.put('/api/users/:id', findIndexByUserId, (request, response) => {
+    const { body, userIndex } = request;
+    mockUsers[userIndex] = { id: mockUsers[userIndex].id, ...body };
+    return response.sendStatus(200);
+});
+
+app.patch('/api/users/:id', findIndexByUserId, (request, response) => {
+    const { body, userIndex } = request;
+    mockUsers[userIndex] = { ...mockUsers[userIndex], ...body };
+    return response.sendStatus(200);
+});
+
+app.delete('/api/users/:id', (request, response) => {
+    const { userIndex } = request;
+    mockUsers.splice(userIndex, 1);
+    return response.sendStatus(200);
 });
 
 app.get('/api/products', (request, response) => response.send([
