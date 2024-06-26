@@ -1,5 +1,5 @@
 import express from 'express';
-import { query } from 'express-validator';
+import { query, validationResult } from 'express-validator';
 
 const app = express();
 
@@ -25,7 +25,8 @@ const findIndexByUserId = (request, response, next) => {
 
 app.get('/', (request, response) => response.status(201).send({ message: 'hello' }));
 
-app.get('/api/users', query(), (request, response) => {
+app.get('/api/users', query('filter').isString().notEmpty(), (request, response) => {
+    const result = validationResult(request);
     const { filter, value } = request.query;
     if (filter && value) {
         return response.send(mockUsers.filter(user => user[filter].includes(value)));
