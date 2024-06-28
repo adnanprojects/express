@@ -1,7 +1,10 @@
 import express from 'express';
 import { query, validationResult } from 'express-validator';
+import { Router } from 'express';
 
 const app = express();
+
+const router = Router();
 
 app.use(express.json());
 
@@ -25,14 +28,25 @@ const findIndexByUserId = (request, response, next) => {
 
 app.get('/', (request, response) => response.status(201).send({ message: 'hello' }));
 
-app.get('/api/users', query('filter').isString().notEmpty(), (request, response) => {
+app.get('/hello', query('person').notEmpty().escape(), (req, res) => {
+    const result = validationResult(req);
+    if (result.isEmpty()) {
+        return res.send(`Hello, ${req.query.person}!`);
+    }
+
+    res.send({ errors: result.array() });
+});
+
+app.get('/api/users', query('filter').notEmpty(), (request, response) => {
     const result = validationResult(request);
+    if (result.isEmpty())
+        return response.send()
     const { filter, value } = request.query;
     if (filter && value) {
         return response.send(mockUsers.filter(user => user[filter].includes(value)));
     };
     return response.send(mockUsers);
-    // TODO: Handle the case in for which filter is wrong and check for value, like: filter=specialname&value=adnan & filter=name&value=23
+    // TODO: Handle the case in for which filter is wrong and check for value, like: filter=specialname&value=adnan & filter=name&value=23 -> Use express-validator
 });
 
 app.post('/api/users', (request, response) => {
